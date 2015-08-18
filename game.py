@@ -34,5 +34,5 @@ class Game(object):
 
 if __name__ == '__main__':
     game = Game()
-    game.add_boids(50)
+    game.add_boids(30)
     game.run_game()
