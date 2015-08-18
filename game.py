@@ -8,13 +8,13 @@ class Game(object):
 
     def __init__(self):
         pygame.display.set_caption('Boids')
-        width, height = (600, 600)
+        width, height = (800, 800)
         self.screen = pygame.display.set_mode((width, height))
         self.env = boids.Environment(width, height)
 
     def add_boids(self, number_of_boids):
         for x in range(number_of_boids):
-            self.env.add_boid(self.env, x=randint(0, 600), y=randint(0, 600), speed=4, angle=randint(0, 360), awareness=300, separation=50)
+            self.env.add_boid(self.env, x=randint(0, 600), y=randint(0, 600), speed=10, angle=randint(0, 360), awareness=600, separation=200)
 
     def run_game(self):
         running = True
@@ -34,5 +34,5 @@ class Game(object):
 
 if __name__ == '__main__':
     game = Game()
-    game.add_boids(10)
+    game.add_boids(50)
     game.run_game()

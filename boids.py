@@ -39,8 +39,13 @@ def collide(p1, p2):
         p2.x -= math.sin(angle)*overlap
         p2.y += math.cos(angle)*overlap
 
+def get_distance(particle1, particle2):
+    del_x = particle1.x - particle2.x
+    del_y = particle1.y - particle2.y
+    hyp = math.hypot(del_x, del_y)
+    return hyp
 
-def get_vector(particle1, particle2):
+def get_angle_vector(particle1, particle2):
     del_x = particle1.x - particle2.x
     del_y = particle1.y - particle2.y
     hyp = math.hypot(del_x, del_y)
@@ -48,7 +53,7 @@ def get_vector(particle1, particle2):
     return (angle, 1)
 
 
-def get_opposite_vector(particle1, particle2):
+def get_opposite_angle_vector(particle1, particle2):
     del_x = particle1.x - particle2.x
     del_y = particle1.y - particle2.y
     hyp = math.hypot(del_x, del_y)
@@ -68,16 +73,20 @@ class Boid(object):
         self.environment = environment
         self.separation = separation
 
-        self.colour = (155, 0, 255)
+        self.colour = (random.randint(0,255), random.randint(0,255), random.randint(0,255))
         self.mass = 1
-        self.size = 10
-        self.thickness = 1
+        self.size = 1
+        self.thickness = 0
 
     def move(self):
         """Update position based on speed and angle
         """
         self.x += math.sin(self.angle) * self.speed
         self.y -= math.cos(self.angle) * self.speed
+
+    def seek_flock_center(self):
+        x, y = self.find_centroid()
+        self.seek(x, y)
 
     def seek(self, x, y):
         """Change angle and speed to move towards a given point
@@ -87,16 +96,34 @@ class Boid(object):
         self.angle = 0.5 * math.pi + math.atan2(dy, dx)
         self.speed = math.hypot(dx, dy) * 0.01
 
-    def avoid(self, boid):
-        """Move away from a given boid
+    def avoid(self, boids):
+        """Move away from boids
         """
-        pass
+        vector = self.angle, self.speed
+        for boid in boids:
+            distance = get_distance(self, boid)
+            if distance < self.separation:
+                self.angle, self.speed = add_vectors(vector, get_angle_vector(boid, self))
+
+    def match_speed(self, boids):
+        speeds = [boid.speed for boid in boids]
+        speed = np.mean(speeds)
+        self.speed += speed/float(8)
+
+    def find_centroid_angle(self, boids):
+        angles = [boid.angle for boid in boids]
+        angle = np.mean(angles)
+        return angle
 
     def find_centroid(self):
-        particle_coordinates = []
-        for particle in self.boids:
-            particle_coordinates.append((particle.x, particle.y))
-        return np.mean(particle_coordinates)
+        particle_coordinates_x = []
+        particle_coordinates_y = []
+        for particle in self.environment.boids:
+            particle_coordinates_x.append(particle.x)
+            particle_coordinates_y.append(particle.y)
+        new_x = np.mean(particle_coordinates_x)
+        new_y = np.mean(particle_coordinates_y)
+        return (new_x, new_y)
 
     def get_neighbors(self):
         neighbors = []
@@ -110,64 +137,61 @@ class Boid(object):
         if not neighbors:
             self.angle, self.speed = self.angle, self.speed
             return
-        angle_sum = 0
-        group_alignment = 0
-        for neighbor in neighbors:
-            angle_sum += neighbor.angle
-        if angle_sum:
-            group_alignment = angle_sum/len(neighbors)
-        boid_vector = (self.angle, self.speed)
-        group_vector = (group_alignment, 0)
-        self.angle, self.speed = add_vectors(boid_vector, group_vector)
+        neighbor_centroid_angle = self.find_centroid_angle(neighbors)
+        ave = (neighbor_centroid_angle + self.angle)/float(2)
+        self.angle += ave
+        # boid_vector = (self.angle, self.speed)
+        # group_vector = (ave, 0)
+        # self.angle, self.speed = add_vectors(boid_vector, group_vector)
 
     def regroup(self, centroid):
         x, y = centroid
         self.seek(x, y)
 
 
-class Particle:
-    """ A circular object with a velocity, size and mass 
-    """
+# class Particle:
+#     """ A circular object with a velocity, size and mass 
+#     """
     
-    def __init__(self, (x, y), size, mass=1):
-        self.x = x
-        self.y = y
-        self.size = size
-        self.colour = (155, 0, 255)
-        self.thickness = 0
-        self.speed = 0
-        self.angle = 0
-        self.mass = mass
-        self.drag = 1
-        self.elasticity = 0.01
-        self.gravity = (0, -0.5)
-        self.acceleration = 1
+#     def __init__(self, (x, y), size, mass=1):
+#         self.x = x
+#         self.y = y
+#         self.size = size
+#         self.colour = (155, 0, 255)
+#         self.thickness = 0
+#         self.speed = 0
+#         self.angle = 0
+#         self.mass = mass
+#         self.drag = 1
+#         self.elasticity = 0.01
+#         self.gravity = (0, -0.5)
+#         self.acceleration = 1
 
-    def move(self):
-        """ Update position based on speed, angle
-            Update speed based on drag """
-        self.x += math.sin(self.angle) * self.speed
-        self.y -= math.cos(self.angle) * self.speed
-        #  self.speed *= self.drag
+#     def move(self):
+#         """ Update position based on speed, angle
+#             Update speed based on drag """
+#         self.x += math.sin(self.angle) * self.speed
+#         self.y -= math.cos(self.angle) * self.speed
+#         #  self.speed *= self.drag
 
-    def move_away(self, other_particle):
-        """ Update position based on speed, angle
-            Update speed based on drag """
-        dist = math.hypot(self.x- other_particle.x, self.y-other_particle.y)
-        repulse =1/(dist**2)
-        # print repulse
-        vector_angle, vector_magnitude = get_opposite_vector(self, other_particle)
-        (self.angle, self.speed) = add_vectors((self.angle, self.speed), (vector_angle, repulse))
-        self.x += math.sin(self.angle) * self.speed
-        self.y -= math.cos(self.angle) * self.speed
+#     def move_away(self, other_particle):
+#         """ Update position based on speed, angle
+#             Update speed based on drag """
+#         dist = math.hypot(self.x- other_particle.x, self.y-other_particle.y)
+#         repulse =1/(dist**2)
+#         # print repulse
+#         vector_angle, vector_magnitude = get_opposite_vector(self, other_particle)
+#         (self.angle, self.speed) = add_vectors((self.angle, self.speed), (vector_angle, repulse))
+#         self.x += math.sin(self.angle) * self.speed
+#         self.y -= math.cos(self.angle) * self.speed
 
-    def mouseMove(self, x, y):
-        """ Change angle and speed to move towards a given point """
+#     def mouseMove(self, x, y):
+#         """ Change angle and speed to move towards a given point """
 
-        dx = x - self.x
-        dy = y - self.y
-        self.angle = 0.5 * math.pi + math.atan2(dy, dx)
-        self.speed = math.hypot(dx, dy) * 0.01
+#         dx = x - self.x
+#         dy = y - self.y
+#         self.angle = 0.5 * math.pi + math.atan2(dy, dx)
+#         self.speed = math.hypot(dx, dy) * 0.01
 
 
 class Environment:
@@ -190,24 +214,23 @@ class Environment:
         boid = Boid(environment, x, y, speed, angle, awareness, separation)
         self.boids.append(boid)
 
-
     def update(self):
         """  Moves particles and tests for collisions with walls others """
         for i, boid in enumerate(self.boids):
             boid.move()
+            boid.seek_flock_center()
+            boid.avoid(self.boids)
             boid.realign()
-            if self.acceleration:
-                boid.accelerate(self.acceleration)
             self.bounce(boid)
-            # for boid2 in self.boids[i+1:]:
-            #     collide(boid, boid2)
+            for boid2 in self.boids[i+1:]:
+                collide(boid, boid2)
             
             #     distance = math.hypot(boid.x - boid2.x, boid.y - boid2.y)
             #     if distance < 50:
             #         boid.avoid(boid2)
             #         boid2.avoid(boid)
 
-            # particle.angle = particle.angle - (particle.angle - avg_angle)
+            # boid.angle = boid.angle - (boid.angle - avg_angle)
             # x, y = pygame.mouse.get_pos()
             # boid.seek(x, y)
 
