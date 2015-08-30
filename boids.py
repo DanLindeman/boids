@@ -140,58 +140,11 @@ class Boid(object):
         neighbor_centroid_angle = self.find_centroid_angle(neighbors)
         ave = (neighbor_centroid_angle + self.angle)/float(2)
         self.angle += ave
-        # boid_vector = (self.angle, self.speed)
-        # group_vector = (ave, 0)
-        # self.angle, self.speed = add_vectors(boid_vector, group_vector)
 
     def regroup(self, centroid):
         x, y = centroid
         self.seek(x, y)
 
-
-# class Particle:
-#     """ A circular object with a velocity, size and mass 
-#     """
-    
-#     def __init__(self, (x, y), size, mass=1):
-#         self.x = x
-#         self.y = y
-#         self.size = size
-#         self.colour = (155, 0, 255)
-#         self.thickness = 0
-#         self.speed = 0
-#         self.angle = 0
-#         self.mass = mass
-#         self.drag = 1
-#         self.elasticity = 0.01
-#         self.gravity = (0, -0.5)
-#         self.acceleration = 1
-
-#     def move(self):
-#         """ Update position based on speed, angle
-#             Update speed based on drag """
-#         self.x += math.sin(self.angle) * self.speed
-#         self.y -= math.cos(self.angle) * self.speed
-#         #  self.speed *= self.drag
-
-#     def move_away(self, other_particle):
-#         """ Update position based on speed, angle
-#             Update speed based on drag """
-#         dist = math.hypot(self.x- other_particle.x, self.y-other_particle.y)
-#         repulse =1/(dist**2)
-#         # print repulse
-#         vector_angle, vector_magnitude = get_opposite_vector(self, other_particle)
-#         (self.angle, self.speed) = add_vectors((self.angle, self.speed), (vector_angle, repulse))
-#         self.x += math.sin(self.angle) * self.speed
-#         self.y -= math.cos(self.angle) * self.speed
-
-#     def mouseMove(self, x, y):
-#         """ Change angle and speed to move towards a given point """
-
-#         dx = x - self.x
-#         dy = y - self.y
-#         self.angle = 0.5 * math.pi + math.atan2(dy, dx)
-#         self.speed = math.hypot(dx, dy) * 0.01
 
 
 class Environment:
@@ -207,7 +160,6 @@ class Environment:
         self.elasticity = 1
         self.acceleration = None
         self.centroid = None
-        #  self.gravity = (0, -0.5)
 
     def add_boid(self, environment, x, y, speed, angle, awareness, separation):
         """ Add boids to the Environment"""
@@ -224,17 +176,6 @@ class Environment:
             self.bounce(boid)
             for boid2 in self.boids[i+1:]:
                 collide(boid, boid2)
-            
-            #     distance = math.hypot(boid.x - boid2.x, boid.y - boid2.y)
-            #     if distance < 50:
-            #         boid.avoid(boid2)
-            #         boid2.avoid(boid)
-
-            # boid.angle = boid.angle - (boid.angle - avg_angle)
-            # x, y = pygame.mouse.get_pos()
-            # boid.seek(x, y)
-
-        # print angle_sum/len(self.particles)
 
     def bounce(self, particle):
         """ Tests whether a particle has hit the environment boundary"""
